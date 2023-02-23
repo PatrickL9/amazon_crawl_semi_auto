@@ -215,7 +215,7 @@ def run(playwright: Playwright) -> None:
             'coupon': coupon
         }
         df_result.loc[len(df_result)] = temp_dict
-        print('完成第{}个asin爬取，还有{}个目标asin'.format(str(i), str(total_cnt)))
+        print('完成第{}个asin爬取，还有{}个目标asin'.format(str(i), str(total_cnt-i)))
         page.close()
         context.close()
         browser.close()
