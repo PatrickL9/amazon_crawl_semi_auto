@@ -25,7 +25,7 @@ with open('config/CA.txt', 'r') as f:
         asin_list.append(a)
 print('读取目标txt完毕，一共有{}个asin'.format(str(len(asin_list))))
 
-df_result = pd.DataFrame(columns=('product_url', 'title', 'reviews', 'stars',
+df_result = pd.DataFrame(columns=('asin', 'product_url', 'title', 'reviews', 'stars',
                                   'rank1', 'cat1', 'rank2', 'cat2', 'first_available_date',
                                   'qna', 'first_img', 'price_type', 'price', 'total_cat',
                                   'spider_time', 'station', 'brand', 'is_fba',
@@ -38,7 +38,7 @@ def run(playwright: Playwright) -> None:
     for asin in asin_list:
         i += 1
         url = main_url + asin
-        browser = playwright.chromium.launch(headless=False)
+        browser = playwright.firefox.launch(headless=False)
         context = browser.new_context()
         # if ''
         context.set_default_timeout(800000)
@@ -193,6 +193,7 @@ def run(playwright: Playwright) -> None:
         coupon = ''.join(coupon).strip()
         print('coupon: ' + coupon)
         temp_dict = {
+            'asin': asin,
             'product_url': url,
             'title': ''.join(title).strip(),
             'reviews': reviews,
@@ -224,7 +225,7 @@ def run(playwright: Playwright) -> None:
 
 with sync_playwright() as playwright:
     run(playwright)
-    file_name = 'amazon关键词爬取结果0223.csv'
+    file_name = 'amazon_asin_test_0302.csv'
     file_path = os.path.join(os.getcwd(), file_name)
     df_result.to_csv(file_path, index=False, sep=',', encoding='utf-8-sig')
 
