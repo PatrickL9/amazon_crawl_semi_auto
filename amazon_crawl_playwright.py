@@ -7,7 +7,7 @@
 @Date ：2023-02-23
 """
 
-from playwright.sync_api import Playwright, sync_playwright, expect
+from playwright.sync_api import Playwright, sync_playwright
 import time
 from lxml import etree
 import datetime
@@ -25,20 +25,20 @@ with open('config/CA.txt', 'r') as f:
         asin_list.append(a)
 print('读取目标txt完毕，一共有{}个asin'.format(str(len(asin_list))))
 
-df_result = pd.DataFrame(columns=('asin', 'product_url', 'title', 'reviews', 'stars',
-                                  'rank1', 'cat1', 'rank2', 'cat2', 'first_available_date',
-                                  'qna', 'first_img', 'price_type', 'price', 'total_cat',
-                                  'spider_time', 'station', 'brand', 'is_fba',
-                                  'description', 'coupon'))
+# df_result = pd.DataFrame(columns=('asin', 'product_url', 'title', 'reviews', 'stars',
+#                                   'rank1', 'cat1', 'rank2', 'cat2', 'first_available_date',
+#                                   'qna', 'first_img', 'price_type', 'price', 'total_cat',
+#                                   'spider_time', 'station', 'brand', 'is_fba',
+#                                   'description', 'coupon'))
 
 
-def run(playwright: Playwright) -> None:
+def run(playwright: Playwright, file_path) -> None:
     total_cnt = len(asin_list)
     i = 0
     for asin in asin_list:
         i += 1
         url = main_url + asin
-        browser = playwright.firefox.launch(headless=False)
+        browser = playwright.webkit.launch(headless=False)
         context = browser.new_context()
         # if ''
         context.set_default_timeout(800000)
@@ -46,7 +46,7 @@ def run(playwright: Playwright) -> None:
         retry_cnt = 0
         text = ''
         while retry_cnt <= 3:
-            page.goto(url, wait_until="domcontentloaded")
+            page.goto(url, wait_until="commit")
             page.reload()
             page.keyboard.press("End")
             # 暂停1秒等待页面加载
@@ -215,8 +215,16 @@ def run(playwright: Playwright) -> None:
             'description': description,
             'coupon': coupon
         }
-        df_result.loc[len(df_result)] = temp_dict
+        # df_result.loc[len(df_result)] = temp_dict
+        df_result = pd.DataFrame([temp_dict])
         print('完成第{}个asin爬取，还有{}个目标asin'.format(str(i), str(total_cnt-i)))
+        if i == 1:
+            # 第一个结果选择全部保存
+            df_result.to_csv(file_path, index=False, sep=',', encoding='utf-8-sig')
+        else:
+            # 从第二个结果开始，忽略表头保存
+            df_result.to_csv(file_path, mode='a', index=False, sep=',', encoding='utf-8-sig', header=False)
+        print('保存结果到CSV文件，保存路径： ' + file_path)
         page.close()
         context.close()
         browser.close()
@@ -224,8 +232,7 @@ def run(playwright: Playwright) -> None:
 
 
 with sync_playwright() as playwright:
-    run(playwright)
-    file_name = 'amazon_asin_test_0302.csv'
+    file_name = 'amazon_asin_test_0316.csv'
     file_path = os.path.join(os.getcwd(), file_name)
-    df_result.to_csv(file_path, index=False, sep=',', encoding='utf-8-sig')
+    run(playwright, file_path)
 
